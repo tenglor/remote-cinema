@@ -1,6 +1,13 @@
 #include <iostream>
+#include <QWindow>
+#include <QApplication>
+//#include <QMainWindow>
 
 int main(int argc, char *argv[]){
-	std::cout << "This is client" << std::endl;
-	return 0;
+	QApplication app(argc, argv);
+
+	QWindow window;
+	window.resize(256,256);
+	window.show();
+	return app.exec();
 }
