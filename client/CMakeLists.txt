@@ -20,7 +20,7 @@ find_package(${qt} COMPONENTS Core Widgets REQUIRED)
 
 target_sources(remote-cinema-client PRIVATE ${sources})
 
-target_link_libraries(remote-cinema-client PRIVATE ${qt}::Widgets)
+target_link_libraries(remote-cinema-client PRIVATE ${qt}::Widgets avcodec)
 
 set_target_properties(remote-cinema-client PROPERTIES
 	DEBUG_POSTFIX d 
