@@ -6,6 +6,7 @@
 extern "C"{
 #   include "libavcodec/avcodec.h"
 #   include "libavutil/mathematics.h"
+#   include "libavcodec/avcodec.h"
 }
 
 int main(int argc, char *argv[]){
@@ -19,7 +20,7 @@ int main(int argc, char *argv[]){
     uint8_t *outbuf, *picture_buf;
     AVPacket packet;
 
-    codec = avcodec_find_encoder(AV_CODEC_ID_MPEG1VIDEO);
+    codec = (AVCodec*)avcodec_find_encoder(AV_CODEC_ID_MPEG1VIDEO);
     if(!codec){
         fprintf(stderr, "codec not found");
         exit(1);
@@ -78,7 +79,13 @@ int main(int argc, char *argv[]){
         }
 
         /* encode the image */
-        out_size = avcodec_encode_video(c, outbuf, outbuf_size, picture);
+
+        AVPacket packet;
+        packet.data = outbuf;
+        packet.size = outbuf_size;
+        av_init_packet(&packet);
+
+        out_size = avcodec_encode_video2(c, &packet, picture);
         printf("encoding frame %3d (size=%5d)\n", i, out_size);
         fwrite(outbuf, 1, out_size, f);
     }

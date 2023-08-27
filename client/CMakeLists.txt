@@ -22,6 +22,8 @@ target_sources(remote-cinema-client PRIVATE ${sources})
 
 target_link_libraries(remote-cinema-client PRIVATE ${qt}::Widgets avcodec)
 
+target_include_directories(remote-cinema-client PRIVATE /usr/include/ffmpeg)
+
 set_target_properties(remote-cinema-client PROPERTIES
 	DEBUG_POSTFIX d 
 	RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/bin
