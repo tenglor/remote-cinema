@@ -9,16 +9,44 @@ extern "C"{
 #   include "libavcodec/avcodec.h"
 }
 
-int main(int argc, char *argv[]){
-	QApplication app(argc, argv);
+#define INBUF_SIZE 4096
 
+int decode_video(){
+    AVCodec *codec;
+    AVCodecContext *c = NULL;
+    FILE *f;
+    AVFrame *frame;
+
+    AVPacket packet;
+
+    av_init_packet(&packet);
+
+    codec = avcodec_find_decoder(AV_CODEC_ID_MPEG1VIDEO);
+    if(!codec){
+        std::cerr << "aaaaa" << std::endl;
+        return 1;
+    }
+
+    c = avcodec_alloc_context3(codec);
+
+    avcodec_open2(c, codec, NULL);
+
+    f = fopen("temp.mpg", "rb");
+
+    frame = av_frame_alloc();
+
+}
+
+int encode_video(){
     AVCodec *codec;
     AVCodecContext *c = NULL;
     int i, out_size, size, x, y, outbuf_size;
     FILE *f;
-    AVFrame *picture;
+    AVFrame *frame;
     uint8_t *outbuf, *picture_buf;
     AVPacket packet;
+    int ret;
+
 
     codec = (AVCodec*)avcodec_find_encoder(AV_CODEC_ID_MPEG1VIDEO);
     if(!codec){
@@ -27,12 +55,12 @@ int main(int argc, char *argv[]){
     }
 
     c = avcodec_alloc_context3(codec);
-    picture = av_frame_alloc();
 
     c->bit_rate = 400000;
     c->width = 352;
     c->height = 288;
     c->time_base = (AVRational){1, 25};
+    c->framerate = (AVRational){25, 1};
     c->gop_size = 10;
     c->max_b_frames = 1;
     c->pix_fmt = AV_PIX_FMT_YUV420P;
@@ -54,41 +82,87 @@ int main(int argc, char *argv[]){
     size = c->width * c->height;
     picture_buf = (uint8_t *)malloc((size * 3)/2); /* size for YUV 420*/
 
-    picture->data[0] = picture_buf;
-    picture->data[1] = picture->data[0] + size;
-    picture->data[2] = picture->data[1] + size / 4;
+    frame = av_frame_alloc();
+    frame->format = c->pix_fmt;
+    frame->width = c->width;
+    frame->height = c->height;
 
-    picture->linesize[0] = c->width;
-    picture->linesize[1] = c->width / 2;
-    picture->linesize[2] = c->width / 2;
+    ret = av_frame_get_buffer(frame, 32);
+    if(ret < 0){
+        fprintf(stderr, "could not allocate something\n");
+        exit(1);
+    }
+
+
+
+    int got_output = 0;
 
     for(int i = 0; i < 25; i++){
+        av_init_packet(&packet);
+        packet.data = NULL;
+        packet.size = 0;
+
         fflush(stdout);
+
+        av_frame_make_writable(frame);
+        if(ret < 0) exit(1);
+
         for(y=0;y<c->height;y++) {
             for(x=0;x<c->width;x++) {
-                picture->data[0][y * picture->linesize[0] + x] = x + y + i * 3;
+                frame->data[0][y * frame->linesize[0] + x] = x + y + i * 3;
             }
         }
 
         /* Cb and Cr */
         for(y=0;y<c->height/2;y++) {
             for(x=0;x<c->width/2;x++) {
-                picture->data[1][y * picture->linesize[1] + x] = 128 + y + i * 2;
-                picture->data[2][y * picture->linesize[2] + x] = 64 + x + i * 5;
+                frame->data[1][y * frame->linesize[1] + x] = 128 + y + i * 2;
+                frame->data[2][y * frame->linesize[2] + x] = 64 + x + i * 5;
             }
         }
 
         /* encode the image */
 
-        AVPacket packet;
-        packet.data = outbuf;
-        packet.size = outbuf_size;
-        av_init_packet(&packet);
-
-        out_size = avcodec_encode_video2(c, &packet, picture);
+        ret = avcodec_encode_video2(c, &packet, frame, &got_output);
         printf("encoding frame %3d (size=%5d)\n", i, out_size);
         fwrite(outbuf, 1, out_size, f);
+
+        if (got_output) {
+            printf("Write frame %3d (size=%5d)\n", i, packet.size);
+            fwrite(packet.data, 1, packet.size, f);
+            av_packet_unref(&packet);
+        }
+
     }
+
+    for(; out_size; i++) {
+        fflush(stdout);
+
+        out_size = avcodec_encode_video2(c, &packet, frame, &got_output);
+        printf("write frame %3d (size=%5d)\n", i, out_size);
+        fwrite(outbuf, 1, out_size, f);
+    }
+
+
+    outbuf[0] = 0x00;
+    outbuf[1] = 0x00;
+    outbuf[2] = 0x01;
+    outbuf[3] = 0xFF;
+
+    fwrite(outbuf, 1, 4, f);
+    fclose(f);
+    free(picture_buf);
+    free(outbuf);
+
+    avcodec_close(c);
+    av_free(c);
+    av_free(frame);
+}
+
+int main(int argc, char *argv[]){
+	QApplication app(argc, argv);
+
+    encode_video();
 
 	QWindow window;
 	window.resize(256,256);

@@ -14,13 +14,14 @@ set(sources
         src/mainwindow.h
         src/mainwindow.cpp
         src/mainwindow.ui
+        src/imageviewwidget.h
 	)
 
 find_package(${qt} COMPONENTS Core Widgets REQUIRED)
 
 target_sources(remote-cinema-client PRIVATE ${sources})
 
-target_link_libraries(remote-cinema-client PRIVATE ${qt}::Widgets avcodec)
+target_link_libraries(remote-cinema-client PRIVATE ${qt}::Widgets avcodec avutil)
 
 target_include_directories(remote-cinema-client PRIVATE /usr/include/ffmpeg)
 
@@ -30,3 +31,4 @@ set_target_properties(remote-cinema-client PROPERTIES
 	RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_LIST_DIR}/bin
 	RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_LIST_DIR}/bin
 	)
+
