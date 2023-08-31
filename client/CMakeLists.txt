@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.20.0 FATAL_ERROR)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
+#set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 project(remote-cinema-client)
 
@@ -15,6 +16,7 @@ set(sources
         src/mainwindow.cpp
         src/mainwindow.ui
         src/imageviewwidget.h
+        src/imageviewwidget.cpp
 	)
 
 find_package(${qt} COMPONENTS Core Widgets REQUIRED)
@@ -29,6 +31,6 @@ set_target_properties(remote-cinema-client PROPERTIES
 	DEBUG_POSTFIX d 
 	RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/bin
 	RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_CURRENT_LIST_DIR}/bin
-	RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_LIST_DIR}/bin
+        RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_LIST_DIR}/bin
 	)
 

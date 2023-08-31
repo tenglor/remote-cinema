@@ -2,6 +2,7 @@
 #include <QWindow>
 #include <QApplication>
 //#include <QMainWindow>
+#include "imageviewwidget.h"
 
 extern "C"{
 #   include "libavcodec/avcodec.h"
@@ -10,14 +11,58 @@ extern "C"{
 }
 
 #define INBUF_SIZE 4096
+//#define INBUF_SIZE 1000000
 
-int decode_video(){
+
+static void pgm_save(unsigned char *buf, int wrap, int xsize, int ysize,
+                     char *filename)
+{
+    FILE *f;
+    int i;
+
+    f = fopen(filename,"w");
+    fprintf(f, "P5\n%d %d\n%d\n", xsize, ysize, 255);
+    for (i = 0; i < ysize; i++)
+        fwrite(buf + i * wrap, 1, xsize, f);
+    fclose(f);
+}
+
+static int decode_write_frame(const char *outfilename, AVCodecContext *avctx,
+                              AVFrame *frame, int *frame_count, AVPacket *pkt, int last)
+{
+    int len, got_frame;
+    char buf[1024];
+
+    len = avcodec_decode_video2(avctx, frame, &got_frame, pkt);
+    if (len < 0) {
+        fprintf(stderr, "Error while decoding frame %d\n", *frame_count);
+        return len;
+    }
+    if (got_frame) {
+        printf("Saving %sframe %3d\n", last ? "last " : "", *frame_count);
+        fflush(stdout);
+
+        /* the picture is allocated by the decoder, no need to free it */
+        snprintf(buf, sizeof(buf), "%s-%d", outfilename, *frame_count);
+        pgm_save(frame->data[0], frame->linesize[0],
+                 frame->width, frame->height, buf);
+        (*frame_count)++;
+    }
+    if (pkt->data) {
+        pkt->size -= len;
+        pkt->data += len;
+    }
+    return 0;
+}
+
+int decode_video(ImageViewWidget *widget){
     AVCodec *codec;
     AVCodecContext *c = NULL;
     FILE *f;
     AVFrame *frame;
 
     AVPacket packet;
+    static uint8_t inbuf[INBUF_SIZE + AV_INPUT_BUFFER_PADDING_SIZE];
 
     av_init_packet(&packet);
 
@@ -34,6 +79,26 @@ int decode_video(){
     f = fopen("temp.mpg", "rb");
 
     frame = av_frame_alloc();
+
+    int frame_count = 0;
+    for(;;){
+        packet.size = fread(inbuf, 1, INBUF_SIZE, f);
+        if(packet.size == 0) break;
+
+        packet.data = inbuf;
+
+        while(packet.size > 0){
+            if(decode_write_frame("temp.mpg", c, frame, &frame_count, &packet, 0) < 0){
+                exit(1);
+            }
+            printf("width %d\n", frame->width);
+            printf("height %d\n", frame->height);
+            widget->resize(frame->width, frame->height);
+            //QImage image(packet.buf, frame->width, frame->height, QImage::Format::For)
+            //widget->setImage(packet.buf);
+        }
+
+    }
 
 }
 
@@ -63,6 +128,7 @@ int encode_video(){
     c->framerate = (AVRational){25, 1};
     c->gop_size = 10;
     c->max_b_frames = 1;
+    //c->pix_fmt = AV_PIX_FMT_RGB8;
     c->pix_fmt = AV_PIX_FMT_YUV420P;
 
 
@@ -80,7 +146,8 @@ int encode_video(){
     outbuf_size = 100000;
     outbuf = (uint8_t *)malloc(outbuf_size);
     size = c->width * c->height;
-    picture_buf = (uint8_t *)malloc((size * 3)/2); /* size for YUV 420*/
+    //picture_buf = (uint8_t *)malloc((size * 3)/2); /* size for YUV 420*/
+    picture_buf = (uint8_t *)malloc((size * 4)); /* size for RGB 8*/
 
     frame = av_frame_alloc();
     frame->format = c->pix_fmt;
@@ -110,6 +177,9 @@ int encode_video(){
         for(y=0;y<c->height;y++) {
             for(x=0;x<c->width;x++) {
                 frame->data[0][y * frame->linesize[0] + x] = x + y + i * 3;
+//                frame->data[0][y * frame->linesize[0] + x + 0] = x + y + i * 3;
+//                frame->data[0][y * frame->linesize[0] + x + 1] = x + y + i * 3;
+//                frame->data[0][y * frame->linesize[0] + x + 2] = x + y + i * 3;
             }
         }
 
@@ -162,10 +232,15 @@ int encode_video(){
 int main(int argc, char *argv[]){
 	QApplication app(argc, argv);
 
-    encode_video();
+    ImageViewWidget widget;
+    widget.show();
 
-	QWindow window;
-	window.resize(256,256);
-	window.show();
+    encode_video();
+    return 0;
+    //decode_video(&widget);
+
+
+    //widget.resize(256,256);
+
 	return app.exec();
 }
