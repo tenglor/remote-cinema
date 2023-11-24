@@ -17,13 +17,18 @@ set(sources
         src/mainwindow.ui
         src/imageviewwidget.h
         src/imageviewwidget.cpp
+        #src/decode.c
+        #src/encode.c
 	)
 
 find_package(${qt} COMPONENTS Core Widgets REQUIRED)
+find_library(AVCODEC_LIBRARY avcodec)
+find_library(AVFORMAT_LIBRARY avformat)
 
 target_sources(remote-cinema-client PRIVATE ${sources})
 
-target_link_libraries(remote-cinema-client PRIVATE ${qt}::Widgets avcodec avutil)
+#target_link_libraries(remote-cinema-client PRIVATE ${qt}::Widgets libavcodec libavformat libavdevice libavfilter libswscale libswresample)
+target_link_libraries(remote-cinema-client PRIVATE ${qt}::Widgets ${AVCODEC_LIBRARY} ${AVFORMAT_LIBRARY})
 
 target_include_directories(remote-cinema-client PRIVATE /usr/include/ffmpeg)
 
