@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "avcodec.h": "c",
-        "frame.h": "c"
+        "frame.h": "c",
+        "qwindow": "cpp"
     }
 }

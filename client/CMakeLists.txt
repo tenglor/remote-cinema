@@ -8,7 +8,7 @@ set(CMAKE_AUTOUIC ON)
 project(remote-cinema-client)
 
 add_executable(remote-cinema-client)
-set(qt Qt5)
+set(qt Qt6)
 
 set(sources
 	src/main.cpp
@@ -24,13 +24,16 @@ set(sources
 find_package(${qt} COMPONENTS Core Widgets REQUIRED)
 find_library(AVCODEC_LIBRARY avcodec)
 find_library(AVFORMAT_LIBRARY avformat)
+find_library(AVUTIL_LIBRARY avutil)
 
 target_sources(remote-cinema-client PRIVATE ${sources})
 
 #target_link_libraries(remote-cinema-client PRIVATE ${qt}::Widgets libavcodec libavformat libavdevice libavfilter libswscale libswresample)
-target_link_libraries(remote-cinema-client PRIVATE ${qt}::Widgets ${AVCODEC_LIBRARY} ${AVFORMAT_LIBRARY})
+target_link_libraries(remote-cinema-client PRIVATE ${qt}::Widgets ${AVCODEC_LIBRARY} ${AVFORMAT_LIBRARY} ${AVUTIL_LIBRARY}) 
 
 target_include_directories(remote-cinema-client PRIVATE /usr/include/ffmpeg)
+
+target_compile_options(remote-cinema-client PUBLIC -fpermissive)
 
 set_target_properties(remote-cinema-client PROPERTIES
 	DEBUG_POSTFIX d 

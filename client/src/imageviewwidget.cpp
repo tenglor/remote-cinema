@@ -1,5 +1,6 @@
 #include "imageviewwidget.h"
 #include <QPixmap>
+#include <QLabel>
 
 ImageViewWidget::ImageViewWidget(QWidget *parent) : QWidget(parent)
 {
@@ -16,9 +17,15 @@ void ImageViewWidget::resizeEvent(QResizeEvent *event)
 }
 
 void ImageViewWidget::setImage(const QImage &image){
-    QPixmap pixmap = QPixmap::fromImage(image).scaled(label->size());
+    //QPixmap pixmap = QPixmap::fromImage(image).scaled(label->size());
+    QPixmap pixmap = QPixmap::fromImage(image);
     label->setPixmap(pixmap);
     label->update();
     repaint();
 }
 
+void ImageViewWidget::setPixmap(const QPixmap &pixmap){
+    label->setPixmap(pixmap);
+    label->update();
+    repaint();
+}

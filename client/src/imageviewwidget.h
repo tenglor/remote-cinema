@@ -14,6 +14,7 @@ public:
     explicit ImageViewWidget(QWidget *parent = nullptr);
 
     void setImage(const QImage &image);
+    void setPixmap(const QPixmap &pixmap);
 signals:
 
 
